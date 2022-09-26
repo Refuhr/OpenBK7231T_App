@@ -245,10 +245,10 @@ OBK_Publish_Result LED_SendDimmerChange() {
 	iValue = g_brightness / g_cfg_brightnessMult;
 	if(iValue < 1) {
 			LED_SetEnableAll(0);
-		}
-		else {
+	}
+	else {
 			LED_SetEnableAll(1);
-		}
+	}
 
 	return MQTT_PublishMain_StringInt("led_dimmer", iValue);
 }
