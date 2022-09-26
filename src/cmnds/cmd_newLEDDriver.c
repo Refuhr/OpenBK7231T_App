@@ -243,12 +243,6 @@ OBK_Publish_Result LED_SendDimmerChange() {
 	int iValue;
 
 	iValue = g_brightness / g_cfg_brightnessMult;
-	if(iValue < 1) {
-		LED_SetEnableAll(0);
-	}
-	else {
-		LED_SetEnableAll(1);
-	}
 
 	return MQTT_PublishMain_StringInt("led_dimmer", iValue);
 }
@@ -361,7 +355,12 @@ float LED_GetDimmer() {
 	return g_brightness / g_cfg_brightnessMult;
 }
 void LED_SetDimmer(int iVal) {
-
+	if(iVal < 1) {
+		g_lightEnableAll = 0;
+	}
+	else {
+		g_lightEnableAll = 1;
+	}
 	g_brightness = iVal * g_cfg_brightnessMult;
 
 #ifndef OBK_DISABLE_ALL_DRIVERS
