@@ -75,9 +75,9 @@ float led_temperature_current = 0;
 
 int isCWMode() {
 	int pwmCount;
-	
+
 	pwmCount = PIN_CountPinsWithRoleOrRole(IOR_PWM, IOR_PWM_n);
-	
+
 	if(pwmCount == 2)
 		return 1;
 	return 0;
@@ -85,7 +85,7 @@ int isCWMode() {
 
 int shouldSendRGB() {
 	int pwmCount;
-	
+
 	// forced RGBCW means 'send rgb'
 	// This flag should be set for SM2315 and BP5758
 	// This flag also could be used for dummy Device Groups driver-module
@@ -93,7 +93,7 @@ int shouldSendRGB() {
 		return 1;
 
 	pwmCount = PIN_CountPinsWithRoleOrRole(IOR_PWM, IOR_PWM_n);
-	
+
 	// single colors and CW don't send rgb
 	if(pwmCount <= 2)
 		return 0;
@@ -209,7 +209,7 @@ static OBK_Publish_Result sendColorChange() {
 	c[0] = (byte)(baseColors[0]);
 	c[1] = (byte)(baseColors[1]);
 	c[2] = (byte)(baseColors[2]);
-	
+
 	sprintf(s,"%02X%02X%02X",c[0],c[1],c[2]);
 
 	return MQTT_PublishMain_StringString("led_basecolor_rgb",s, 0);
@@ -220,7 +220,7 @@ void LED_GetBaseColorString(char * s) {
 	c[0] = (byte)(baseColors[0]);
 	c[1] = (byte)(baseColors[1]);
 	c[2] = (byte)(baseColors[2]);
-	
+
 	sprintf(s,"%02X%02X%02X",c[0],c[1],c[2]);
 }
 static void sendFinalColor() {
@@ -234,7 +234,7 @@ static void sendFinalColor() {
 	c[0] = (byte)(finalColors[0]);
 	c[1] = (byte)(finalColors[1]);
 	c[2] = (byte)(finalColors[2]);
-	
+
 	sprintf(s,"%02X%02X%02X",c[0],c[1],c[2]);
 
 	MQTT_PublishMain_StringString("led_finalcolor_rgb",s, 0);
@@ -243,6 +243,12 @@ OBK_Publish_Result LED_SendDimmerChange() {
 	int iValue;
 
 	iValue = g_brightness / g_cfg_brightnessMult;
+	if(iValue < 1) {
+			LED_SetEnableAll(0);
+		}
+		else {
+			LED_SetEnableAll(1);
+		}
 
 	return MQTT_PublishMain_StringInt("led_dimmer", iValue);
 }
@@ -279,7 +285,7 @@ float LED_GetTemperature0to1Range() {
 }
 void LED_SetTemperature(int tmpInteger, bool bApply) {
 	float f;
-	
+
 	led_temperature_current = tmpInteger;
 
 	f = LED_GetTemperature0to1Range();
@@ -335,7 +341,7 @@ static int enableAll(const void *context, const char *cmd, const char *args, int
 
 		LED_SetEnableAll(bEnable);
 
-	
+
 	//	sendColorChange();
 	//	sendDimmerChange();
 	//	sendTemperatureChange();
@@ -391,7 +397,7 @@ static int dimmer(const void *context, const char *cmd, const char *args, int cm
 }
 void LED_SetFinalRGB(byte r, byte g, byte b) {
 	g_lightMode = Light_RGB;
-			
+
 	baseColors[0] = r;
 	baseColors[1] = g;
 	baseColors[2] = b;
@@ -460,7 +466,7 @@ int LED_SetBaseColor(const void *context, const char *cmd, const char *args, int
 				}
 				// keep hsv in sync
 			}
-			
+
 			RGBtoHSV(baseColors[0]/255.0f, baseColors[1]/255.0f, baseColors[2]/255.0f, &g_hsv_h, &g_hsv_s, &g_hsv_v);
 
 			apply_smart_light();
@@ -517,7 +523,7 @@ static void onHSVChanged() {
 
 	apply_smart_light();
 
-	
+
 	if(CFG_HasFlag(OBK_FLAG_MQTT_BROADCASTLEDFINALCOLOR)) {
 		sendFinalColor();
 	}
@@ -529,7 +535,7 @@ static void led_setSaturation(float sat){
 	onHSVChanged();
 }
 static void led_setHue(float hue){
-	
+
 	g_hsv_h = hue;
 
 	onHSVChanged();
@@ -539,7 +545,7 @@ static int setSaturation(const void *context, const char *cmd, const char *args,
 
 	f = atof(args);
 
-	// input is in 0-100 range 
+	// input is in 0-100 range
 	f *= 0.01f;
 
 	led_setSaturation(f);
