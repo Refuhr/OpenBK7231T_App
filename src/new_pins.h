@@ -35,7 +35,8 @@ enum IORole {
 
 	IOR_BP5758D_DAT,
 	IOR_BP5758D_CLK,
-
+	IOR_BP1658CJ_DAT,
+	IOR_BP1658CJ_CLK,
 	IOR_PWM_n,
 
 	IOR_Total_Options,
@@ -96,7 +97,7 @@ typedef struct pinsState_s {
 
 
 // bit indexes (not values), so 0 1 2 3 4
-#define OBK_FLAG_MQTT_BROADCASTLEDPARAMSTOGETHER	0	
+#define OBK_FLAG_MQTT_BROADCASTLEDPARAMSTOGETHER	0
 #define OBK_FLAG_MQTT_BROADCASTLEDFINALCOLOR		1
 #define OBK_FLAG_MQTT_BROADCASTSELFSTATEPERMINUTE	2
 #define OBK_FLAG_LED_RAWCHANNELSMODE				3
@@ -109,8 +110,10 @@ typedef struct pinsState_s {
 #define OBK_FLAG_MQTT_BROADCASTSELFSTATEONCONNECT	10
 #define OBK_FLAG_SLOW_PWM							11
 #define OBK_FLAG_LED_REMEMBERLASTSTATE				12
+#define OBK_FLAG_LED_ON_CHANGE_TURN_ON 13
+#define OBK_FLAG_MQTT_BROADCAST_LED_FINAL_RGBCWCOLOR 14
 
-#define OBK_TOTAL_FLAGS 13
+#define OBK_TOTAL_FLAGS 15
 
 //
 // Main config structure (less than 2KB)
@@ -253,4 +256,3 @@ void Setup_Device_BK7231N_KS_602_TOUCH();
 void Setup_Device_Enbrighten_WFD4103();
 void Setup_Device_Aubess_Mini_Smart_Switch_16A();
 #endif
-

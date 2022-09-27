@@ -31,7 +31,7 @@ static int power(const void *context, const char *cmd, const char *args, int cmd
 			channel = atoi(cmd+5);
 		} else {
 			// if new LED driver active
-			if(PIN_CountPinsWithRoleOrRole(IOR_PWM, IOR_PWM_n) > 0) {
+			if(PIN_CountPinsWithRoleOrRole(IOR_PWM, IOR_PWM_n) > 0 || CFG_HasFlag(OBK_FLAG_LED_FORCESHOWRGBCWCONTROLLER)) {
 				channel = SPECIAL_CHANNEL_LEDPOWER;
 			} else {
 				// find first active channel, because some people index with 0 and some with 1

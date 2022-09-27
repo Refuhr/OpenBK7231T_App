@@ -36,14 +36,14 @@ static int dgr_port = 4447;
 //	return 0;
 //}
 
-byte Val255ToVal100(byte v){ 
+byte Val255ToVal100(byte v){
 	float fr;
 	// convert to our 0-100 range
 	fr = v / 255.0f;
 	v = fr * 100;
 	return v;
 }
-byte Val100ToVal255(byte v){ 
+byte Val100ToVal255(byte v){
 	float fr;
 	fr = v / 100.0f;
 	v = fr * 255;
@@ -204,7 +204,7 @@ void DRV_DGR_processPower(int relayStates, byte relaysCount) {
 	int i;
 	int ch;
 
-	if(PIN_CountPinsWithRoleOrRole(IOR_PWM,IOR_PWM_n) > 0) {
+	if(PIN_CountPinsWithRoleOrRole(IOR_PWM,IOR_PWM_n) > 0 || OBK_FLAG_LED_FORCESHOWRGBCWCONTROLLER) {
 		LED_SetEnableAll(BIT_CHECK(relayStates,0));
 	} else {
 		//if(CHANNEL_HasChannelSomeOutputPin(0)) {
@@ -217,7 +217,7 @@ void DRV_DGR_processPower(int relayStates, byte relaysCount) {
 			bOn = BIT_CHECK(relayStates,i);
 			ch = startIndex+i;
 			if(bOn) {
-				if(CHANNEL_HasChannelPinWithRoleOrRole(ch,IOR_PWM,IOR_PWM_n)) {
+				if(CHANNEL_HasChannelPinWithRoleOrRole(ch,IOR_PWM,IOR_PWM_n) || OBK_FLAG_LED_FORCESHOWRGBCWCONTROLLER) {
 
 				} else {
 					CHANNEL_Set(ch,1,0);
@@ -238,13 +238,13 @@ void DRV_DGR_processBrightnessPowerOn(byte brightness) {
 	//idx_channel = PIN_GetPinChannelForPinIndex(idx_pin);
 
 	//CHANNEL_Set(idx_channel,brightness,0);
-	
+
 }
 void DRV_DGR_processLightBrightness(byte brightness) {
 	addLogAdv(LOG_INFO, LOG_FEATURE_DGR,"DRV_DGR_processLightBrightness: %i\n",(int)brightness);
 
 	LED_SetDimmer(Val255ToVal100(brightness));
-	
+
 }
 typedef struct dgrMmember_s {
     struct sockaddr_in addr;
@@ -272,9 +272,9 @@ dgrMember_t *findMember() {
 
 int DGR_CheckSequence(int seq) {
 	dgrMember_t *m;
-	
+
 	m = findMember();
-	
+
 	if(m == 0)
 		return 1;
 	if(seq > m->lastSeq) {
@@ -425,14 +425,14 @@ void DRV_DGR_OnChannelChanged(int ch, int value) {
 			if(CHANNEL_Get(i)) {
 				BIT_SET(channelValues ,i);
 			}
-		} 
+		}
 	}
 	if(channelsCount>0){
 		DRV_DGR_Send_Power(groupName,channelValues,channelsCount);
 	}
 
 
-	
+
 }
 // DGR_SendBrightness roomLEDstrips 128
 int CMD_DGR_SendBrightness(const void *context, const char *cmd, const char *args, int flags) {
@@ -465,6 +465,3 @@ void DRV_DGR_Init()
     CMD_RegisterCommand("DGR_SendPower", "", CMD_DGR_SendPower, "qqq", NULL);
     CMD_RegisterCommand("DGR_SendBrightness", "", CMD_DGR_SendBrightness, "qqq", NULL);
 }
-
-
-

@@ -77,7 +77,7 @@ template_t g_templates [] = {
     { Setup_Device_Deta_Smart_Double_Power_Point_6922HA_Series2, "BK7231T DETA SMART Double Power Point 6922HA-Series 2"},
     { Setup_Device_ArlecRGBCCTDownlight, "Arlec RGB+CCT LED Downlight ALD092RHA"},
     { Setup_Device_CasaLifeCCTDownlight, "CasaLife CCT LED Downlight SMART-AL2017-TGTS"},
-    { Setup_Device_Enbrighten_WFD4103, "Enbrighten WFD4103 WiFi Switch BK7231T WB2S"} 
+    { Setup_Device_Enbrighten_WFD4103, "Enbrighten WFD4103 WiFi Switch BK7231T WB2S"}
 };
 
 int g_total_templates = sizeof(g_templates)/sizeof(g_templates[0]);
@@ -139,7 +139,7 @@ int http_fn_index(http_request_t *request) {
             hprintf128(request,"<h3>Set RGB to %s!</h3>",tmpA);
             LED_SetBaseColor(0,"led_basecolor",tmpA,0);
         }
-        
+
         if(http_getArg(request->url,"off",tmpA,sizeof(tmpA))) {
             j = atoi(tmpA);
             hprintf128(request,"<h3>Disabled %i!</h3>",j);
@@ -203,7 +203,7 @@ int http_fn_index(http_request_t *request) {
         }
     }
     poststr(request, "</table>");
-    
+
     poststr(request, "<table width=\"100%\">");
     for(i = 0; i < CHANNEL_MAX; i++) {
 
@@ -217,7 +217,7 @@ int http_fn_index(http_request_t *request) {
             poststr(request, "<tr><td>");
             hprintf128(request,"Temperature Channel %i value %i C<br>",i, iValue);
             poststr(request, "</td></tr>");
-            
+
         } else if(channelType == ChType_Temperature_div10) {
 			int iValue;
 			float fValue;
@@ -275,7 +275,7 @@ int http_fn_index(http_request_t *request) {
 			const char *types5NoOff[] = { "Lowest", "Low", "Mid", "High", "Highest"};
 			int numTypes;
 			int iValue;
-			
+
 			if(channelType == ChType_OffLowMidHigh) {
 				types = types4;
 				numTypes = 4;
@@ -342,7 +342,7 @@ int http_fn_index(http_request_t *request) {
             }
         }
         else if((bRawPWMs&&h_isChannelPWM(i)) || (channelType == ChType_Dimmer)) {
-			
+
         	// PWM and dimmer both use a slider control
         	const char *inputName = h_isChannelPWM(i) ? "pwm" : "dim";
             int pwmValue;
@@ -436,7 +436,7 @@ int http_fn_index(http_request_t *request) {
             hprintf128(request,"<input type=\"hidden\" name=\"%sIndex\" value=\"%i\">",inputName,SPECIAL_CHANNEL_TEMPERATURE);
             hprintf128(request,"<input  type=\"submit\" style=\"display:none;\" value=\"Toggle %i\"/></form>",SPECIAL_CHANNEL_TEMPERATURE);
 			poststr(request, "</td></tr>");
-		} 
+		}
 
 	}
     poststr(request, "</table>");
@@ -469,7 +469,7 @@ int http_fn_index(http_request_t *request) {
     if(!http_getArg(request->url,"state",tmpA,sizeof(tmpA))) {
         poststr(request, "</div>"); // end div#state
 
-        // Shared UI elements 
+        // Shared UI elements
         poststr(request, "<form action=\"cfg\"><input type=\"submit\" value=\"Config\"/></form>");
 
         poststr(request, "<form action=\"/index\">"
@@ -487,7 +487,7 @@ int http_fn_index(http_request_t *request) {
         poststr(
             request,
             "<script type='text/javascript'>"
-            "var firstTime, lastTime, req=null;" 
+            "var firstTime, lastTime, req=null;"
             "eb=s=>document.getElementById(s);"
             "function showState() { "
                 "clearTimeout(firstTime);"
@@ -499,7 +499,7 @@ int http_fn_index(http_request_t *request) {
                         "if (!(document.activeElement.tagName=='INPUT' && "
                             "(document.activeElement.type=='number' || document.activeElement.type=='color'))) {"
                                 "var s=req.responseText;"
-                                "eb('state').innerHTML=s;" 
+                                "eb('state').innerHTML=s;"
                         "}"
                         "clearTimeout(firstTime);"
                         "clearTimeout(lastTime);"
@@ -1230,7 +1230,7 @@ int http_fn_cfg_quick(http_request_t *request) {
 void build_hass_unique_id(char *outBuffer, char *type, int index){
     //https://developers.home-assistant.io/docs/entity_registry_index/#unique-id-requirements mentions that mac can be used for
     //unique_id and I would think that longDeviceName should contain that.
-    
+
     //e.g. longDeviceName_relay_1
     sprintf(outBuffer,"%s_%s_%d",g_cfg.longDeviceName,type,index);
 }
@@ -1266,7 +1266,7 @@ int http_fn_cfg_ha(http_request_t *request) {
         if(role == IOR_PWM || role == IOR_PWM_n) {
             pwmCount++;
         }
-    }        
+    }
 
     if(relayCount > 0) {
         char switchAdded = 0;
@@ -1298,7 +1298,7 @@ int http_fn_cfg_ha(http_request_t *request) {
     }
     if(pwmCount > 0) {
         char lightAdded = 0;
-                
+
         for(i = 0; i < CHANNEL_MAX; i++) {
             if(h_isChannelPWM(i)) {
                 if (mqttAdded == 0){
@@ -1357,7 +1357,7 @@ int http_tasmota_json_power(http_request_t *request) {
 	numRelays = 0;
 
 	// LED driver (if has PWMs)
-	if(numPWMs > 0){
+	if(numPWMs > 0 || CFG_HasFlag(OBK_FLAG_LED_ON_CHANGE_TURN_ON)){
 		if(LED_GetEnableAll() == 0) {
 			poststr(request,"{\"POWER\":\"OFF\"}");
 		} else {
@@ -1405,7 +1405,7 @@ int http_tasmota_json_status_SNS(http_request_t *request) {
 	current = DRV_GetReading(OBK_CURRENT);
 	power = DRV_GetReading(OBK_POWER);
 #else
-	factor = 0; 
+	factor = 0;
 	voltage = 0;
 	current = 0;
 	power = 0;
@@ -1575,8 +1575,8 @@ int http_fn_cfg_pins(http_request_t *request) {
         // Anecdotally, if pins are configured badly, the
         // second-timer breaks. To reconfigure, force
         // saving the configuration instead of waiting.
-		//CFG_Save_SetupTimer(); 
-        CFG_Save_IfThereArePendingChanges(); 
+		//CFG_Save_SetupTimer();
+        CFG_Save_IfThereArePendingChanges();
         hprintf128(request, "Pins update - %i reqs, %i changed!<br><br>",iChangedRequested,iChanged);
     }
 //	strcat(outbuf,"<button type=\"button\">Click Me!</button>");
@@ -1650,6 +1650,8 @@ const char *g_obk_flagNames[] = {
 	"[MQTT] Broadcast self state on MQTT connect",
 	"[PWM] BK7231 use 600hz instead of 1khz default",
 	"[LED] remember LED driver state (RGBCW, enable, brightness, temperature) after reboot",
+  "[LED] always turn on bulb when color changes",
+  "[MQTT] Broadcast led rgbcw final color (topic name: YourDevName/led_finalcolor_rgbcw/get)",
 	"error",
 	"error",
 };
@@ -1765,7 +1767,7 @@ int http_fn_cfg_startup(http_request_t *request) {
 					<input type=\"hidden\" id=\"idx\" name=\"idx\" value=\"");
 			hprintf128(request, "%i",i);
 			poststr(request,"\">");
-			poststr(request,"<input type=\"number\" id=\"value\" name=\"value\" value=\"");
+			poststr(request,"<input type=\"text\" id=\"value\" name=\"value\" value=\"");
 			hprintf128(request, "%i",startValue);
 			poststr(request,"\"><br>");
 			poststr(request,"<input type=\"submit\" value=\"Save\"/></form>");

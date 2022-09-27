@@ -276,10 +276,11 @@ int channelSet(mqtt_request_t* request){
   int channel = 0;
   int iValue = 0;
 
-  addLogAdv(LOG_INFO,LOG_FEATURE_MQTT,"channelSet topic %i", request->topic);
+  //addLogAdv(LOG_INFO,LOG_FEATURE_MQTT,"channelSet topic %i", request->topic);
+  addLogAdv(LOG_INFO,LOG_FEATURE_MQTT,"channelSet topic (str) %s", request->topic);
 
   // TODO: better
-  while(*p != '/') {
+  while(*p != '/') { //p = command topic, example p string: bkxxxxx/0/set --> 0/set
     if(*p == 0)
       return 0;
     p++;
@@ -294,10 +295,11 @@ int channelSet(mqtt_request_t* request){
   }
 
   addLogAdv(LOG_INFO,LOG_FEATURE_MQTT,"channelSet channel %i", channel);
+  addLogAdv(LOG_INFO,LOG_FEATURE_MQTT,"channelSet channel (string) %s", channel);
 
   // if channel out of range, stop here.
   if ((channel < 0) || (channel > 32)){
-    return 0;
+      return 0;
   }
 
   // find something after channel - should be <base>/<chan>/set
@@ -323,8 +325,10 @@ int channelSet(mqtt_request_t* request){
   copy[len] = '\0';
 
   addLogAdv(LOG_INFO,LOG_FEATURE_MQTT,"MQTT client in mqtt_incoming_data_cb data is %s for ch %i\n", copy, channel);
+  addLogAdv(LOG_INFO,LOG_FEATURE_MQTT,"MQTT client in mqtt_incoming_data_cb data is %s for ch %s\n", copy, channel);
 
   iValue = atoi((char *)copy);
+  addLogAdv(LOG_INFO,LOG_FEATURE_MQTT, "iValue = %i", iValue);
   CHANNEL_Set(channel,iValue,0);
 
   // return 1 to stop processing callbacks here.
@@ -335,6 +339,7 @@ int channelSet(mqtt_request_t* request){
 
 // this accepts cmnd/<clientId>/<xxx> to receive data to set channels
 int tasCmnd(mqtt_request_t* request){
+  addLogAdv(LOG_DEBUG,LOG_FEATURE_MQTT, "Entering tasCmnd.");
   // we only need a few bytes to receive a decimal number 0-100
   char copy[64];
   int len = request->receivedLen;
@@ -355,6 +360,7 @@ int tasCmnd(mqtt_request_t* request){
   while(*p != '/') { if(*p == 0) return 0; p++; }
   p++;
 
+  addLogAdv(LOG_DEBUG,LOG_FEATURE_MQTT, "copy = %s. p = %d.", copy, p);
   // use command executor....
   CMD_ExecuteCommandArgs(p, copy, COMMAND_FLAG_SOURCE_MQTT);
 
@@ -402,7 +408,7 @@ static OBK_Publish_Result MQTT_PublishMain(mqtt_client_t *client, const char *sC
   if(client==0)
 	  return OBK_PUBLISH_WAS_DISCONNECTED;
 
-  
+
 	if(flags & OBK_PUBLISH_FLAG_MUTEX_SILENT) {
 		if(MQTT_Mutex_Take(100)==0) {
 			return OBK_PUBLISH_MUTEX_FAIL;
@@ -701,7 +707,7 @@ OBK_Publish_Result MQTT_ChannelPublish(int channel, int flags)
 	char channelNameStr[8];
 	char valueStr[16];
 	int iValue;
-	
+
 	iValue = CHANNEL_Get(channel);
 
 	addLogAdv(LOG_INFO,LOG_FEATURE_MAIN, "Forced channel publish! Publishing val %i with %i \n",channel,iValue);
@@ -784,10 +790,10 @@ OBK_Publish_Result MQTT_DoItemPublish(int idx) {
 
     case PUBLISHITEM_SELF_BUILD:
       return MQTT_DoItemPublishString("build", g_build_str);
-      
+
     case PUBLISHITEM_SELF_MAC:
       return MQTT_DoItemPublishString("mac", HAL_GetMACStr(dataStr));
-    
+
     case PUBLISHITEM_SELF_DATETIME:
       //Drivers are only built on BK7231 chips
       #ifndef OBK_DISABLE_ALL_DRIVERS
@@ -825,7 +831,7 @@ OBK_Publish_Result MQTT_DoItemPublish(int idx) {
     default:
       break;
   }
-  
+
 	if(CHANNEL_IsInUse(idx)) {
 		 MQTT_ChannelPublish(g_publishItemIndex, OBK_PUBLISH_FLAG_MUTEX_SILENT);
 	}
@@ -920,7 +926,7 @@ int MQTT_RunEverySecondUpdate() {
 				if(g_publishItemIndex >= CHANNEL_MAX) {
 					// done
 					g_bPublishAllStatesNow = 0;
-				}	
+				}
 			}
 		} else {
 			// not doing anything
@@ -937,4 +943,3 @@ int MQTT_RunEverySecondUpdate() {
 	}
 	return 1;
 }
-

@@ -50,6 +50,8 @@ int g_lightMode = Light_RGB;
 // Those are base colors, normalized, without brightness applied
 float baseColors[5] = { 255, 255, 255, 255, 255 };
 float finalColors[5] = { 255, 255, 255, 255, 255 };
+// last rgb state colors
+char * last_led_color = "#ffffff";
 float g_hsv_h = 0; // 0 to 360
 float g_hsv_s = 0; // 0 to 1
 float g_hsv_v = 1; // 0 to 1
@@ -57,11 +59,13 @@ float g_hsv_v = 1; // 0 to 1
 float g_cfg_colorScaleToChannel = 100.0f/255.0f;
 int g_numBaseColors = 5;
 float g_brightness = 1.0f;
-
+// last brightness value
+int last_iVal = 100;
 // NOTE: in this system, enabling/disabling whole led light bulb
 // is not changing the stored channel and brightness values.
 // They are kept intact so you can reenable the bulb and keep your color setting
 int g_lightEnableAll = 1;
+int last_g_lightEnableAll = 0;
 // config only stuff
 float g_cfg_brightnessMult = 0.01f;
 
@@ -71,7 +75,7 @@ float g_cfg_brightnessMult = 0.01f;
 float led_temperature_min = HASS_TEMPERATURE_MIN;
 float led_temperature_max = HASS_TEMPERATURE_MAX;
 float led_temperature_current = 0;
-
+float last_led_temperature = 0;
 
 int isCWMode() {
 	int pwmCount;
@@ -89,15 +93,15 @@ int shouldSendRGB() {
 	// forced RGBCW means 'send rgb'
 	// This flag should be set for SM2315 and BP5758
 	// This flag also could be used for dummy Device Groups driver-module
-	if(CFG_HasFlag(OBK_FLAG_LED_FORCESHOWRGBCWCONTROLLER))
+	if (CFG_HasFlag(OBK_FLAG_LED_FORCESHOWRGBCWCONTROLLER)) {
 		return 1;
-
+	}
 	pwmCount = PIN_CountPinsWithRoleOrRole(IOR_PWM, IOR_PWM_n);
 
 	// single colors and CW don't send rgb
-	if(pwmCount <= 2)
+	if(pwmCount <= 2) {
 		return 0;
-
+	}
 	return 1;
 }
 
@@ -192,9 +196,17 @@ void apply_smart_light() {
 	if(DRV_IsRunning("BP5758D")) {
 		BP5758D_Write(finalRGBCW);
 	}
+	if(DRV_IsRunning("BP1658CJ")) {
+		BP1658CJ_Write(finalRGBCW);
+	}
 #endif
 	if(CFG_HasFlag(OBK_FLAG_LED_REMEMBERLASTSTATE)) {
 		HAL_FlashVars_SaveLED(g_lightMode,g_brightness / g_cfg_brightnessMult, led_temperature_current,baseColors[0],baseColors[1],baseColors[2]);
+	}
+	if(CFG_HasFlag(OBK_FLAG_MQTT_BROADCAST_LED_FINAL_RGBCWCOLOR)) {
+		char str[16];
+		sprintf(str,"%02X%02X%02X%02X%02X",finalRGBCW[0],finalRGBCW[1],finalRGBCW[2],finalRGBCW[3],finalRGBCW[4]);
+		MQTT_PublishMain_StringString("led_finalcolor_rgbcw",str, 0);
 	}
 }
 
@@ -203,15 +215,13 @@ static OBK_Publish_Result sendColorChange() {
 	byte c[3];
 
 	if(shouldSendRGB()==0) {
-		return OBK_PUBLISH_WAS_NOT_REQUIRED;
+			return OBK_PUBLISH_WAS_NOT_REQUIRED;
 	}
-
 	c[0] = (byte)(baseColors[0]);
 	c[1] = (byte)(baseColors[1]);
 	c[2] = (byte)(baseColors[2]);
 
 	sprintf(s,"%02X%02X%02X",c[0],c[1],c[2]);
-
 	return MQTT_PublishMain_StringString("led_basecolor_rgb",s, 0);
 }
 void LED_GetBaseColorString(char * s) {
@@ -241,7 +251,6 @@ static void sendFinalColor() {
 }
 OBK_Publish_Result LED_SendDimmerChange() {
 	int iValue;
-
 	iValue = g_brightness / g_cfg_brightnessMult;
 
 	return MQTT_PublishMain_StringInt("led_dimmer", iValue);
@@ -277,10 +286,14 @@ float LED_GetTemperature0to1Range() {
 
 	return f;
 }
-void LED_SetTemperature(int tmpInteger, bool bApply) {
+void  LED_SetTemperature(int tmpInteger, bool bApply) {
 	float f;
 
 	led_temperature_current = tmpInteger;
+	if(last_led_temperature != led_temperature_current && CFG_HasFlag(OBK_FLAG_LED_ON_CHANGE_TURN_ON)) {
+		g_lightEnableAll = 1;
+		last_led_temperature = led_temperature_current;
+	}
 
 	f = LED_GetTemperature0to1Range();
 
@@ -289,8 +302,8 @@ void LED_SetTemperature(int tmpInteger, bool bApply) {
 
 	if(bApply) {
 		g_lightMode = Light_Temperature;
-		sendTemperatureChange();
 		apply_smart_light();
+		sendTemperatureChange();
 	}
 
 }
@@ -345,9 +358,7 @@ static int enableAll(const void *context, const char *cmd, const char *args, int
 	//return 0;
 }
 int LED_IsRunningDriver() {
-	if(PIN_CountPinsWithRoleOrRole(IOR_PWM,IOR_PWM_n))
-		return 1;
-	if(CFG_HasFlag(OBK_FLAG_LED_FORCESHOWRGBCWCONTROLLER))
+	if(PIN_CountPinsWithRoleOrRole(IOR_PWM,IOR_PWM_n) || CFG_HasFlag(OBK_FLAG_LED_FORCESHOWRGBCWCONTROLLER))
 		return 1;
 	return 0;
 }
@@ -355,13 +366,21 @@ float LED_GetDimmer() {
 	return g_brightness / g_cfg_brightnessMult;
 }
 void LED_SetDimmer(int iVal) {
+	g_brightness = iVal * g_cfg_brightnessMult;
+	ADDLOG_DEBUG(LOG_FEATURE_CMD, "iVal = %d", iVal);
 	if(iVal < 1) {
 		g_lightEnableAll = 0;
 	}
 	else {
-		g_lightEnableAll = 1;
+		if(CFG_HasFlag(OBK_FLAG_LED_ON_CHANGE_TURN_ON)) {
+			g_lightEnableAll = 1;
+		}
+		else if(last_iVal == 0) {
+			g_lightEnableAll = 1;
+		}
 	}
-	g_brightness = iVal * g_cfg_brightnessMult;
+	last_iVal = iVal;
+	ADDLOG_INFO(LOG_FEATURE_CMD, "after last_iVal = %i", last_iVal);
 
 #ifndef OBK_DISABLE_ALL_DRIVERS
 	DRV_DGR_OnLedDimmerChange(iVal);
@@ -418,9 +437,12 @@ void LED_SetFinalRGB(byte r, byte g, byte b) {
 }
 int LED_SetBaseColor(const void *context, const char *cmd, const char *args, int bAll){
    // support both '#' prefix and not
-            const char *c = args;
-            int val = 0;
-            ADDLOG_DEBUG(LOG_FEATURE_CMD, " BASECOLOR got %s", args);
+      const char *c = args;
+      int val = 0;
+			if(c != last_led_color && CFG_HasFlag(OBK_FLAG_LED_ON_CHANGE_TURN_ON)) {
+				g_lightEnableAll = 1;
+			}
+      ADDLOG_DEBUG(LOG_FEATURE_CMD, " BASECOLOR got %s", args);
 
 			// some people prefix colors with #
 			if(c[0] == '#')
