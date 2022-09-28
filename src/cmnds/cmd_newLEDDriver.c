@@ -294,7 +294,7 @@ void  LED_SetTemperature(int tmpInteger, bool bApply) {
 		g_lightEnableAll = 1;
 		last_led_temperature = led_temperature_current;
 	}
-
+	LED_SendEnableAllState();
 	f = LED_GetTemperature0to1Range();
 
 	baseColors[3] = (255.0f) * (1-f);
@@ -378,6 +378,7 @@ void LED_SetDimmer(int iVal) {
 		else if(last_iVal == 0) {
 			g_lightEnableAll = 1;
 		}
+		LED_SendEnableAllState();
 	}
 	last_iVal = iVal;
 	ADDLOG_INFO(LOG_FEATURE_CMD, "after last_iVal = %i", last_iVal);
@@ -442,6 +443,7 @@ int LED_SetBaseColor(const void *context, const char *cmd, const char *args, int
 			if(c != last_led_color && CFG_HasFlag(OBK_FLAG_LED_ON_CHANGE_TURN_ON)) {
 				g_lightEnableAll = 1;
 			}
+			LED_SendEnableAllState();
       ADDLOG_DEBUG(LOG_FEATURE_CMD, " BASECOLOR got %s", args);
 
 			// some people prefix colors with #
