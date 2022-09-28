@@ -377,8 +377,8 @@ void LED_SetDimmer(int iVal) {
 		else if(last_iVal == 0) {
 			g_lightEnableAll = 1;
 		}
-		LED_SendEnableAllState();
 	}
+	LED_SendEnableAllState();
 	last_iVal = iVal;
 	ADDLOG_INFO(LOG_FEATURE_CMD, "after last_iVal = %i", last_iVal);
 
