@@ -65,7 +65,6 @@ int last_iVal = 100;
 // is not changing the stored channel and brightness values.
 // They are kept intact so you can reenable the bulb and keep your color setting
 int g_lightEnableAll = 1;
-int last_g_lightEnableAll = 0;
 // config only stuff
 float g_cfg_brightnessMult = 0.01f;
 
