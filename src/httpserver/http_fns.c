@@ -20,7 +20,7 @@
     // nothing
 #elif PLATFORM_BL602
 
-#elif PLATFORM_W800
+#elif PLATFORM_W600 || PLATFORM_W800
 
 #elif PLATFORM_XR809
     #include <image/flash.h>
@@ -97,7 +97,8 @@ template_t g_templates [] = {
     { Setup_Device_Deta_Smart_Double_Power_Point_6922HA_Series2, "BK7231T DETA SMART Double Power Point 6922HA-Series 2"},
     { Setup_Device_ArlecRGBCCTDownlight, "Arlec RGB+CCT LED Downlight ALD092RHA"},
     { Setup_Device_CasaLifeCCTDownlight, "CasaLife CCT LED Downlight SMART-AL2017-TGTS"},
-    { Setup_Device_Enbrighten_WFD4103, "Enbrighten WFD4103 WiFi Switch BK7231T WB2S"} 
+    { Setup_Device_Enbrighten_WFD4103, "Enbrighten WFD4103 WiFi Switch BK7231T WB2S"} ,
+    { Setup_Device_Zemismart_Light_Switch_KS_811_3, "Zemismart Light Switch (Neutral Optional) KS_811_3"} 
 };
 
 int g_total_templates = sizeof(g_templates)/sizeof(g_templates[0]);
@@ -771,7 +772,7 @@ int http_fn_cfg_wifi(http_request_t *request) {
 #elif PLATFORM_XR809
         poststr(request,"TODO XR809<br>");
 
-#elif PLATFORM_W800
+#elif PLATFORM_W600 || PLATFORM_W800
         poststr(request,"TODO W800<br>");
 #elif PLATFORM_BL602
         poststr(request,"TODO BL602<br>");
@@ -1035,7 +1036,7 @@ int http_fn_flash_read_tool(http_request_t *request) {
             res = flash_read(FLASH_INDEX_XR809, nowOfs, buffer, now);
 #elif PLATFORM_BL602
 
-#elif PLATFORM_W800
+#elif PLATFORM_W600 || PLATFORM_W800
 
 #else
             res = bekken_hal_flash_read (nowOfs, buffer,now);
@@ -1960,7 +1961,7 @@ int http_fn_ota_exec(http_request_t *request) {
 
 #elif PLATFORM_BL602
 
-#elif PLATFORM_W800
+#elif PLATFORM_W600 || PLATFORM_W800
     t_http_fwup(tmpA);
 #elif PLATFORM_XR809
     XR809_RequestOTAHTTP(tmpA);
