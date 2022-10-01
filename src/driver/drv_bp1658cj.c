@@ -102,13 +102,13 @@ void BP1658CJ_Write(byte *rgbcw) {
 	for(int i = 0; i < 5; i++){
 		// convert 0-255 to 0-1023
 		//cur_col_10[i] = rgbcw[g_channelOrder[i]] * 4;
-    if(!CFG_HasFlag(OBK_FLAG_LED_APPLYSIMPLEGAMMACORRECTION)) {
-      // Arduino mapping function
-      cur_col_10[i] = (rgbcw[g_channelOrder[i]] - 0x00) * (0x3FF - 0x00) / (0xFF - 0x00) + 0x00;
-    }
-    else {
+    if(CFG_HasFlag(OBK_FLAG_LED_APPLYSIMPLEGAMMACORRECTION) && i > 2) {
       // gamma correction
       cur_col_10[i] = gamma[rgbcw[g_channelOrder[i]]];
+    }
+    else {
+      // Arduino mapping function
+      cur_col_10[i] = (rgbcw[g_channelOrder[i]] - 0x00) * (0x3FF - 0x00) / (0xFF - 0x00) + 0x00;
     }
 	}
   ADDLOG_DEBUG(LOG_FEATURE_CMD, "Writing via I2C (10Bit): #%03X%03X%03X%03X%03X", cur_col_10[0], cur_col_10[1], cur_col_10[2], cur_col_10[3], cur_col_10[4]);
