@@ -12,17 +12,32 @@
 
 #include "drv_bp1658cj.h"
 
+const short gamma[] = {
+  0,   1,   1,   1,   2,   2,   2,   2,   3,   3,   3,   3,   4,   4,   4,   4,
+      5,   5,   5,   5,   5,   6,   6,   6,   6,   7,   7,   7,   7,   8,   8,   8,
+      8,   8,   9,   9,   9,   9,  10,  10,  10,  10,  11,  11,  11,  11,  12,  12,
+     12,  12,  13,  13,  13,  14,  15,  16,  17,  18,  20,  21,  22,  23,  24,  25,
+     26,  27,  28,  29,  30,  31,  33,  34,  35,  36,  37,  38,  39,  40,  41,  43,
+     45,  47,  49,  50,  52,  54,  56,  58,  59,  61,  63,  65,  67,  68,  70,  72,
+     74,  76,  77,  79,  81,  83,  84,  86,  88,  90,  92,  93,  95,  97,  99, 101,
+    102, 104, 106, 110, 113, 117, 121, 124, 128, 132, 135, 139, 143, 146, 150, 154,
+    158, 162, 166, 169, 173, 177, 180, 184, 188, 191, 195, 199, 202, 206, 210, 213,
+    217, 221, 224, 228, 232, 235, 239, 243, 246, 250, 254, 257, 261, 267, 272, 278,
+    283, 289, 294, 300, 305, 311, 317, 322, 328, 333, 339, 344, 350, 356, 361, 367,
+    372, 378, 383, 389, 394, 400, 406, 411, 417, 422, 428, 433, 439, 444, 450, 458,
+    465, 473, 480, 488, 496, 503, 511, 518, 526, 534, 541, 549, 557, 564, 572, 579,
+    587, 595, 602, 610, 617, 627, 635, 642, 650, 657, 665, 673, 680, 688, 695, 703,
+    713, 723, 733, 743, 753, 763, 773, 783, 793, 803, 813, 823, 833, 843, 853, 863,
+    873, 883, 893, 903, 913, 923, 933, 943, 953, 963, 973, 983, 993,1003,1013,1023 };
+
+
 static int g_pin_clk = 26;
 static int g_pin_data = 24;
 // Mapping between RGBCW to current BP1658CJ channels
 static byte g_channelOrder[5] = { 1, 0, 2, 3, 4 }; //in our case: Hama 5.5W GU10 RGBCW the channel order is: [Green][Red][Blue][Warm][Cold]
 
 const int BP1658CJ_DELAY = 1; //delay*10 --> nops
-// Arduino mapping function
-long map(long x, long in_min, long in_max, long out_min, long out_max)
-{
-  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
-}
+
 void usleep(int r) //delay function do 10*r nops, because rtos_delay_milliseconds is too much
 {
   for(volatile int i=0; i<r; i++)
@@ -82,17 +97,22 @@ static void BP1658CJ_PreInit() {
 void BP1658CJ_Write(byte *rgbcw) {
   ADDLOG_DEBUG(LOG_FEATURE_CMD, "Writing to Lamp: #%02X%02X%02X%02X%02X", rgbcw[0], rgbcw[1], rgbcw[2], rgbcw[3], rgbcw[4]);
   unsigned short cur_col_10[5];
-  unsigned short col_map[5];
+  //unsigned short gamma_col[5];
 
 	for(int i = 0; i < 5; i++){
 		// convert 0-255 to 0-1023
 		//cur_col_10[i] = rgbcw[g_channelOrder[i]] * 4;
-    col_map[i] = map(rgbcw[g_channelOrder[i]], 0x00, 0xFF, 0x00, 0x3FF);
-    // Arduino mapping function
-    cur_col_10[i] = (rgbcw[i] - 0x00) * (0x3FF - 0x00) / (0xFF - 0x00) + 0x00;
+    if(!CFG_HasFlag(OBK_FLAG_LED_APPLYSIMPLEGAMMACORRECTION)) {
+      // Arduino mapping function
+      cur_col_10[i] = (rgbcw[g_channelOrder[i]] - 0x00) * (0x3FF - 0x00) / (0xFF - 0x00) + 0x00;
+    }
+    else {
+      // gamma correction
+      cur_col_10[i] = gamma[rgbcw[g_channelOrder[i]]];
+    }
 	}
-  ADDLOG_DEBUG(LOG_FEATURE_CMD, "Writing to Lamp (10Bit): #%03X%03X%03X%03X%03X", cur_col_10[0], cur_col_10[1], cur_col_10[2], cur_col_10[3], cur_col_10[4]);
-  ADDLOG_DEBUG(LOG_FEATURE_CMD, "Writing to Lamp old (10Bit): #%03X%03X%03X%03X%03X", col_map[0], col_map[1], col_map[2], col_map[3], col_map[4]);
+  ADDLOG_DEBUG(LOG_FEATURE_CMD, "Writing via I2C (10Bit): #%03X%03X%03X%03X%03X", cur_col_10[0], cur_col_10[1], cur_col_10[2], cur_col_10[3], cur_col_10[4]);
+  //ADDLOG_DEBUG(LOG_FEATURE_CMD, "Gamma correction: #%03X%03X%03X%03X%03X", gamma_col[0], gamma_col[1], gamma_col[2], gamma_col[3], gamma_col[4]);
 
 
 	// If we receive 0 for all channels, we'll assume that the lightbulb is off, and activate BP1658CJ's sleep mode ([0x80] ).

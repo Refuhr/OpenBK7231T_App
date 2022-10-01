@@ -112,8 +112,9 @@ typedef struct pinsState_s {
 #define OBK_FLAG_LED_REMEMBERLASTSTATE				12
 #define OBK_FLAG_LED_ON_CHANGE_TURN_ON 13
 #define OBK_FLAG_MQTT_BROADCAST_LED_FINAL_RGBCWCOLOR 14
+#define OBK_FLAG_LED_APPLYSIMPLEGAMMACORRECTION 15
 
-#define OBK_TOTAL_FLAGS 15
+#define OBK_TOTAL_FLAGS 16
 
 //
 // Main config structure (less than 2KB)
