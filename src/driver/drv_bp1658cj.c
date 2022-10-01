@@ -18,8 +18,11 @@ static int g_pin_data = 24;
 static byte g_channelOrder[5] = { 1, 0, 2, 3, 4 }; //in our case: Hama 5.5W GU10 RGBCW the channel order is: [Green][Red][Blue][Warm][Cold]
 
 const int BP1658CJ_DELAY = 1; //delay*10 --> nops
-
-
+// Arduino mapping function
+long map(long x, long in_min, long in_max, long out_min, long out_max)
+{
+  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
 void usleep(int r) //delay function do 10*r nops, because rtos_delay_milliseconds is too much
 {
   for(volatile int i=0; i<r; i++)
@@ -79,11 +82,16 @@ static void BP1658CJ_PreInit() {
 void BP1658CJ_Write(byte *rgbcw) {
   ADDLOG_DEBUG(LOG_FEATURE_CMD, "Writing to Lamp: #%02X%02X%02X%02X%02X", rgbcw[0], rgbcw[1], rgbcw[2], rgbcw[3], rgbcw[4]);
   unsigned short cur_col_10[5];
+  unsigned short col_map[5];
 
 	for(int i = 0; i < 5; i++){
 		// convert 0-255 to 0-1023
 		cur_col_10[i] = rgbcw[g_channelOrder[i]] * 4;
+    col_map[i] = map(rgbcw[g_channelOrder[i]], 0x00, 0xFF, 0x00, 0x400);
 	}
+  ADDLOG_DEBUG(LOG_FEATURE_CMD, "Writing to Lamp (10Bit): #%03X%03X%03X%03X%03X", cur_col_10[0], cur_col_10[1], cur_col_10[2], cur_col_10[3], cur_col_10[4]);
+  ADDLOG_DEBUG(LOG_FEATURE_CMD, "Writing to Lamp map (10Bit): #%03X%03X%03X%03X%03X", col_map[0], col_map[1], col_map[2], col_map[3], col_map[4]);
+
 
 	// If we receive 0 for all channels, we'll assume that the lightbulb is off, and activate BP1658CJ's sleep mode ([0x80] ).
 	if (cur_col_10[0]==0 && cur_col_10[1]==0 && cur_col_10[2]==0 && cur_col_10[3]==0 && cur_col_10[4]==0) {
