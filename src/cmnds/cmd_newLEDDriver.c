@@ -610,10 +610,10 @@ void NewLED_RestoreSavedStateIfNeeded() {
 		baseColors[1] = rgb[1];
 		baseColors[2] = rgb[2];
 		apply_smart_light();
-	} else {
+	} // else {
 		// set, but do not apply
-		LED_SetTemperature(250,0);
-	}
+		// LED_SetTemperature(250,0);
+	// }
 
 	// "cmnd/obk8D38570E/led_dimmer_get""
 }
